@@ -17,7 +17,18 @@
       "name": "insert-date",
       "title": "Insert Date",
       "description": "Pick a date from a monthly calendar and paste it into the frontmost app.",
-      "mode": "view"
+      "mode": "view",
+      "preferences": [
+        {
+          "name": "showWeekNumbers",
+          "title": "Week Numbers",
+          "label": "Show week numbers",
+          "description": "Show the week number at the start of each row.",
+          "type": "checkbox",
+          "default": false,
+          "required": false
+        }
+      ]
     }
   ],
   "dependencies": {
