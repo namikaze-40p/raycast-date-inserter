@@ -1,8 +1,13 @@
-import { Action, ActionPanel, Detail, environment, getPreferenceValues, Keyboard } from "@raycast/api";
+import { Action, ActionPanel, Detail, environment, getPreferenceValues, Icon, useNavigation } from "@raycast/api";
 import { addDays, format } from "date-fns";
 import { useMemo, useState } from "react";
-import { shiftMonth, toDayId, WeekStartsOn } from "./lib/calendar";
+import { arrowActions } from "./components/arrow-actions";
+import { MonthView } from "./components/month-view";
+import { YearView } from "./components/year-view";
+import { moveToMonth, moveToYear, shiftMonth, shiftYear, toDayId, WeekStartsOn } from "./lib/calendar";
 import { renderCalendarSvg } from "./lib/calendar-image";
+import { GO_TO_MONTH, GO_TO_YEAR } from "./lib/shortcuts";
+import { useImageCache } from "./lib/use-image-cache";
 
 // Fixed for now; these become preferences in Phase 3.
 const DATE_FORMAT = "yyyy-MM-dd";
@@ -10,45 +15,46 @@ const WEEK_STARTS_ON: WeekStartsOn = 0;
 const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 const WEEK_LABEL = "週";
 const MONTH_TITLE_FORMAT = "yyyy年M月";
-
-const ARROW_MOVES: { title: string; key: Keyboard.KeyEquivalent; days: number }[] = [
-  { title: "Previous Day", key: "arrowLeft", days: -1 },
-  { title: "Next Day", key: "arrowRight", days: 1 },
-  { title: "Previous Week", key: "arrowUp", days: -7 },
-  { title: "Next Week", key: "arrowDown", days: 7 },
-];
+const YEAR_TITLE_FORMAT = "yyyy年";
+const MONTH_LABEL_FORMAT = "M月";
 
 export default function Command() {
   const { showWeekNumbers } = getPreferenceValues<Preferences.InsertDate>();
   const today = useMemo(() => new Date(), []);
   const [selected, setSelected] = useState<Date>(today);
+  const { push, pop } = useNavigation();
 
   const dark = environment.appearance === "dark";
-  // Data URIs keyed by selected day. Raycast shows an image without flicker once
-  // it has loaded that exact URI, so the same string must be reused every time.
-  const imageCache = useMemo(() => new Map<string, string>(), []);
+  const imageFor = useImageCache();
+  const imageUrl = imageFor(toDayId(selected), () =>
+    renderCalendarSvg({
+      selected,
+      today,
+      weekStartsOn: WEEK_STARTS_ON,
+      showWeekNumbers,
+      dark,
+      weekdayLabels: WEEKDAY_LABELS,
+      weekLabel: WEEK_LABEL,
+      monthTitleFormat: MONTH_TITLE_FORMAT,
+    }),
+  );
 
-  function imageFor(date: Date): string {
-    const key = toDayId(date);
-    let uri = imageCache.get(key);
-    if (!uri) {
-      const svg = renderCalendarSvg({
-        selected: date,
-        today,
-        weekStartsOn: WEEK_STARTS_ON,
-        showWeekNumbers,
-        dark,
-        weekdayLabels: WEEKDAY_LABELS,
-        weekLabel: WEEK_LABEL,
-        monthTitleFormat: MONTH_TITLE_FORMAT,
-      });
-      uri = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
-      imageCache.set(key, uri);
-    }
-    return uri;
+  /** Opens the month view; `pops` is how many screens to close after a month is chosen. */
+  function monthView(initial: Date, pops: number) {
+    return (
+      <MonthView
+        initial={initial}
+        today={today}
+        yearTitleFormat={YEAR_TITLE_FORMAT}
+        monthLabelFormat={MONTH_LABEL_FORMAT}
+        onPick={(month) => {
+          setSelected((current) => moveToMonth(current, month));
+          for (let i = 0; i < pops; i++) pop();
+        }}
+      />
+    );
   }
 
-  const imageUrl = imageFor(selected);
   const formatted = format(selected, DATE_FORMAT);
 
   return (
@@ -58,15 +64,14 @@ export default function Command() {
       actions={
         <ActionPanel>
           <Action.Paste title="Paste Date" content={formatted} />
+          <Action.CopyToClipboard title="Copy Date" content={formatted} shortcut={{ modifiers: ["cmd"], key: "c" }} />
           <ActionPanel.Section title="Navigate">
-            {ARROW_MOVES.map((move) => (
-              <Action
-                key={move.key}
-                title={move.title}
-                shortcut={{ modifiers: [], key: move.key }}
-                onAction={() => setSelected((current) => addDays(current, move.days))}
-              />
-            ))}
+            {arrowActions(7, (delta) => setSelected((current) => addDays(current, delta)), [
+              "Previous Day",
+              "Next Day",
+              "Previous Week",
+              "Next Week",
+            ])}
             <Action
               title="Previous Month"
               shortcut={{ modifiers: ["cmd"], key: "[" }}
@@ -76,6 +81,39 @@ export default function Command() {
               title="Next Month"
               shortcut={{ modifiers: ["cmd"], key: "]" }}
               onAction={() => setSelected((current) => shiftMonth(current, 1))}
+            />
+            <Action
+              title="Previous Year"
+              shortcut={{ modifiers: ["cmd", "shift"], key: "[" }}
+              onAction={() => setSelected((current) => shiftYear(current, -1))}
+            />
+            <Action
+              title="Next Year"
+              shortcut={{ modifiers: ["cmd", "shift"], key: "]" }}
+              onAction={() => setSelected((current) => shiftYear(current, 1))}
+            />
+          </ActionPanel.Section>
+          <ActionPanel.Section title="Jump">
+            <Action
+              title="Go to Month…"
+              icon={Icon.Calendar}
+              shortcut={GO_TO_MONTH}
+              onAction={() => push(monthView(selected, 1))}
+            />
+            <Action
+              title="Go to Year…"
+              icon={Icon.Calendar}
+              shortcut={GO_TO_YEAR}
+              onAction={() =>
+                push(
+                  <YearView
+                    initialYear={selected.getFullYear()}
+                    today={today}
+                    // Choosing a year continues to that year's months; afterwards close both screens.
+                    onPick={(year) => push(monthView(moveToYear(selected, year), 2))}
+                  />,
+                )
+              }
             />
           </ActionPanel.Section>
         </ActionPanel>

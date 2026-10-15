@@ -1,5 +1,6 @@
 import { format, getDay, isSameDay, isSameMonth } from "date-fns";
 import { buildMonthPage, weekNumber, WeekStartsOn, WEEKS_PER_PAGE } from "./calendar";
+import { DARK, IMAGE_HEIGHT, IMAGE_WIDTH, LIGHT, Palette, svgDocument, text, title, TITLE_HEIGHT } from "./svg";
 
 export interface CalendarImageOptions {
   selected: Date;
@@ -13,50 +14,14 @@ export interface CalendarImageOptions {
   monthTitleFormat: string;
 }
 
-interface Palette {
-  text: string;
-  label: string;
-  saturday: string;
-  sunday: string;
-  todayRing: string;
-  selection: string;
-}
-
-const LIGHT: Palette = {
-  text: "#1C1C1E",
-  label: "#8E8E93",
-  saturday: "#0A64D6",
-  sunday: "#D93636",
-  todayRing: "#E5484D",
-  selection: "#E3E3E8",
-};
-
-const DARK: Palette = {
-  text: "#F2F2F7",
-  label: "#98989F",
-  saturday: "#5AA9FF",
-  sunday: "#FF6B6B",
-  todayRing: "#FF6369",
-  selection: "#3A3A3C",
-};
-
-// The Detail view scrolls when the image is taller than this at full width.
-export const IMAGE_WIDTH = 700;
-export const IMAGE_HEIGHT = 300;
-const TITLE_HEIGHT = 36;
 const WEEKDAY_ROW_HEIGHT = 24;
 const WEEK_COLUMN_WIDTH = 48;
 const ROW_HEIGHT = (IMAGE_HEIGHT - TITLE_HEIGHT - WEEKDAY_ROW_HEIGHT) / WEEKS_PER_PAGE;
-const FONT = "-apple-system, Helvetica, Arial, sans-serif";
 
 function weekdayColor(weekday: number, palette: Palette, fallback: string): string {
   if (weekday === 0) return palette.sunday;
   if (weekday === 6) return palette.saturday;
   return fallback;
-}
-
-function text(x: number, y: number, content: string | number, attrs: string): string {
-  return `<text x="${x}" y="${y}" font-family="${FONT}" dominant-baseline="central" ${attrs}>` + `${content}</text>`;
 }
 
 /** Renders one month page, including the selection highlight, as an SVG document. */
@@ -70,15 +35,7 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
   const gridTop = TITLE_HEIGHT + WEEKDAY_ROW_HEIGHT;
   const headerY = TITLE_HEIGHT + WEEKDAY_ROW_HEIGHT / 2;
 
-  const parts: string[] = [];
-  parts.push(
-    text(
-      8,
-      TITLE_HEIGHT / 2,
-      format(selected, options.monthTitleFormat),
-      `font-size="20" font-weight="700" fill="${palette.text}"`,
-    ),
-  );
+  const parts: string[] = [title(format(selected, options.monthTitleFormat), palette)];
 
   if (showWeekNumbers) {
     parts.push(
@@ -142,8 +99,5 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
     }
   }
 
-  return (
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_WIDTH}" height="${IMAGE_HEIGHT}" ` +
-    `viewBox="0 0 ${IMAGE_WIDTH} ${IMAGE_HEIGHT}">${parts.join("")}</svg>`
-  );
+  return svgDocument(parts);
 }
