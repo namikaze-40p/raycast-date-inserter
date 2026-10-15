@@ -65,34 +65,19 @@ export default function Command() {
           ) : (
             <Action.OpenInBrowser title="Open Date Format Reference" url="https://date-fns.org/docs/format" />
           )}
-          <ActionPanel.Section title="Navigate">
-            {arrowActions(7, (delta) => setSelected((current) => addDays(current, delta)), [
-              "Previous Day",
-              "Next Day",
-              "Previous Week",
-              "Next Week",
-            ])}
-            <Action
-              title="Previous Month"
-              shortcut={{ modifiers: ["cmd"], key: "[" }}
-              onAction={() => setSelected((current) => shiftMonth(current, -1))}
-            />
-            <Action
-              title="Next Month"
-              shortcut={{ modifiers: ["cmd"], key: "]" }}
-              onAction={() => setSelected((current) => shiftMonth(current, 1))}
-            />
-            <Action
-              title="Previous Year"
-              shortcut={{ modifiers: ["cmd", "shift"], key: "[" }}
-              onAction={() => setSelected((current) => shiftYear(current, -1))}
-            />
-            <Action
-              title="Next Year"
-              shortcut={{ modifiers: ["cmd", "shift"], key: "]" }}
-              onAction={() => setSelected((current) => shiftYear(current, 1))}
-            />
-          </ActionPanel.Section>
+          {formats.length > 1 && (
+            <ActionPanel.Section title="Format">
+              {formats.map((slot, index) => (
+                <Action
+                  key={slot.number}
+                  title={`Use Date Format ${slot.number} (${slot.pattern})`}
+                  icon={index === formatIndex ? Icon.CheckCircle : Icon.Circle}
+                  shortcut={{ modifiers: [], key: String(slot.number) as Keyboard.KeyEquivalent }}
+                  onAction={() => setFormatIndex(index)}
+                />
+              ))}
+            </ActionPanel.Section>
+          )}
           <ActionPanel.Section title="Jump">
             <Action
               title="Go to Today"
@@ -122,19 +107,34 @@ export default function Command() {
               }
             />
           </ActionPanel.Section>
-          {formats.length > 1 && (
-            <ActionPanel.Section title="Format">
-              {formats.map((slot, index) => (
-                <Action
-                  key={slot.number}
-                  title={`Use Date Format ${slot.number} (${slot.pattern})`}
-                  icon={index === formatIndex ? Icon.CheckCircle : Icon.Circle}
-                  shortcut={{ modifiers: [], key: String(slot.number) as Keyboard.KeyEquivalent }}
-                  onAction={() => setFormatIndex(index)}
-                />
-              ))}
-            </ActionPanel.Section>
-          )}
+          <ActionPanel.Section title="Navigate">
+            {arrowActions(7, (delta) => setSelected((current) => addDays(current, delta)), [
+              "Previous Day",
+              "Next Day",
+              "Previous Week",
+              "Next Week",
+            ])}
+            <Action
+              title="Previous Month"
+              shortcut={{ modifiers: ["cmd"], key: "[" }}
+              onAction={() => setSelected((current) => shiftMonth(current, -1))}
+            />
+            <Action
+              title="Next Month"
+              shortcut={{ modifiers: ["cmd"], key: "]" }}
+              onAction={() => setSelected((current) => shiftMonth(current, 1))}
+            />
+            <Action
+              title="Previous Year"
+              shortcut={{ modifiers: ["cmd", "shift"], key: "[" }}
+              onAction={() => setSelected((current) => shiftYear(current, -1))}
+            />
+            <Action
+              title="Next Year"
+              shortcut={{ modifiers: ["cmd", "shift"], key: "]" }}
+              onAction={() => setSelected((current) => shiftYear(current, 1))}
+            />
+          </ActionPanel.Section>
         </ActionPanel>
       }
     />

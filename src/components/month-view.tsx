@@ -44,14 +44,6 @@ export function MonthView({ initial, today, language, onPick }: Props) {
       actions={
         <ActionPanel>
           <Action title="Choose Month" onAction={() => onPick(selected)} />
-          <ActionPanel.Section title="Navigate">
-            {arrowActions(PICKER_COLUMNS, (delta) => setSelected((month) => addMonths(month, delta)), [
-              "Previous Month",
-              "Next Month",
-              `Back ${PICKER_COLUMNS} Months`,
-              `Forward ${PICKER_COLUMNS} Months`,
-            ])}
-          </ActionPanel.Section>
           <ActionPanel.Section title="Jump">
             <Action
               title="Go to This Month"
@@ -76,6 +68,14 @@ export function MonthView({ initial, today, language, onPick }: Props) {
                 )
               }
             />
+          </ActionPanel.Section>
+          <ActionPanel.Section title="Navigate">
+            {arrowActions(PICKER_COLUMNS, (delta) => setSelected((month) => addMonths(month, delta)), [
+              "Previous Month",
+              "Next Month",
+              `Back ${PICKER_COLUMNS} Months`,
+              `Forward ${PICKER_COLUMNS} Months`,
+            ])}
           </ActionPanel.Section>
         </ActionPanel>
       }

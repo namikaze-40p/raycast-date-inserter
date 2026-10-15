@@ -40,14 +40,6 @@ export function YearView({ initialYear, today, onPick }: Props) {
       actions={
         <ActionPanel>
           <Action title="Choose Year" onAction={() => onPick(selected)} />
-          <ActionPanel.Section title="Navigate">
-            {arrowActions(PICKER_COLUMNS, (delta) => setSelected((year) => year + delta), [
-              "Previous Year",
-              "Next Year",
-              `Back ${PICKER_COLUMNS} Years`,
-              `Forward ${PICKER_COLUMNS} Years`,
-            ])}
-          </ActionPanel.Section>
           <ActionPanel.Section title="Jump">
             <Action
               title="Go to This Year"
@@ -55,6 +47,14 @@ export function YearView({ initialYear, today, onPick }: Props) {
               shortcut={GO_TO_TODAY}
               onAction={() => setSelected(today.getFullYear())}
             />
+          </ActionPanel.Section>
+          <ActionPanel.Section title="Navigate">
+            {arrowActions(PICKER_COLUMNS, (delta) => setSelected((year) => year + delta), [
+              "Previous Year",
+              "Next Year",
+              `Back ${PICKER_COLUMNS} Years`,
+              `Forward ${PICKER_COLUMNS} Years`,
+            ])}
           </ActionPanel.Section>
         </ActionPanel>
       }
