@@ -20,13 +20,142 @@
       "mode": "view",
       "preferences": [
         {
-          "name": "showWeekNumbers",
-          "title": "Week Numbers",
-          "label": "Show week numbers",
-          "description": "Show the week number at the start of each row.",
-          "type": "checkbox",
-          "default": false,
+          "name": "format1",
+          "title": "Date Format 1",
+          "description": "date-fns format (Unicode tokens), e.g. yyyy-MM-dd or yyyy/MM/dd (EEE). See https://date-fns.org/docs/format",
+          "type": "textfield",
+          "default": "yyyy-MM-dd",
+          "placeholder": "yyyy-MM-dd",
           "required": false
+        },
+        {
+          "name": "format2",
+          "title": "Date Format 2",
+          "description": "Optional second format. When set, press 1 or 2 in the calendar to switch formats.",
+          "type": "textfield",
+          "default": "",
+          "placeholder": "e.g. MMM d, yyyy",
+          "required": false
+        },
+        {
+          "name": "defaultFormat",
+          "title": "Initial Format",
+          "description": "Format selected when the calendar opens.",
+          "type": "dropdown",
+          "default": "1",
+          "required": false,
+          "data": [
+            {
+              "title": "Date Format 1",
+              "value": "1"
+            },
+            {
+              "title": "Date Format 2",
+              "value": "2"
+            }
+          ]
+        },
+        {
+          "name": "language",
+          "title": "Language",
+          "description": "Language of the calendar and of names in the inserted date (e.g. EEE, MMMM).",
+          "type": "dropdown",
+          "default": "en",
+          "required": false,
+          "data": [
+            {
+              "title": "Deutsch",
+              "value": "de"
+            },
+            {
+              "title": "English",
+              "value": "en"
+            },
+            {
+              "title": "Español",
+              "value": "es"
+            },
+            {
+              "title": "Français",
+              "value": "fr"
+            },
+            {
+              "title": "Italiano",
+              "value": "it"
+            },
+            {
+              "title": "日本語",
+              "value": "ja"
+            },
+            {
+              "title": "한국어",
+              "value": "ko"
+            },
+            {
+              "title": "ไทย",
+              "value": "th"
+            },
+            {
+              "title": "Tiếng Việt",
+              "value": "vi"
+            },
+            {
+              "title": "简体中文",
+              "value": "zh-CN"
+            },
+            {
+              "title": "繁體中文",
+              "value": "zh-TW"
+            }
+          ]
+        },
+        {
+          "name": "weekStart",
+          "title": "Week Start",
+          "description": "First day of the week in the calendar.",
+          "type": "dropdown",
+          "default": "0",
+          "required": false,
+          "data": [
+            {
+              "title": "Sunday",
+              "value": "0"
+            },
+            {
+              "title": "Monday",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "name": "weekNumbers",
+          "title": "Week Numbers",
+          "description": "Show week numbers in the calendar. \"Auto\" matches the week start: Sunday → Western traditional, Monday → ISO 8601.",
+          "type": "dropdown",
+          "default": "off",
+          "required": false,
+          "data": [
+            {
+              "title": "Off",
+              "value": "off"
+            },
+            {
+              "title": "ISO 8601",
+              "value": "iso"
+            },
+            {
+              "title": "Western traditional",
+              "value": "western"
+            },
+            {
+              "title": "Middle Eastern",
+              "value": "middle-eastern"
+            },
+            {
+              "title": "Auto (based on week start)",
+              "value": "auto"
+            }
+          ]
         }
       ]
     }

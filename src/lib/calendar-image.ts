@@ -1,17 +1,16 @@
 import { format, getDay, isSameDay, isSameMonth } from "date-fns";
-import { buildMonthPage, weekNumber, WeekStartsOn, WEEKS_PER_PAGE } from "./calendar";
+import { buildMonthPage, weekNumber, WeekNumbering, WeekStartsOn, WEEKS_PER_PAGE } from "./calendar";
+import { LanguageConfig } from "./locales";
 import { DARK, IMAGE_HEIGHT, IMAGE_WIDTH, LIGHT, Palette, svgDocument, text, title, TITLE_HEIGHT } from "./svg";
 
 export interface CalendarImageOptions {
   selected: Date;
   today: Date;
   weekStartsOn: WeekStartsOn;
-  showWeekNumbers: boolean;
+  /** Undefined hides the week-number column. */
+  weekNumbering?: WeekNumbering;
+  language: LanguageConfig;
   dark: boolean;
-  /** Weekday names indexed by `getDay()` (0 = Sunday). */
-  weekdayLabels: string[];
-  weekLabel: string;
-  monthTitleFormat: string;
 }
 
 const WEEKDAY_ROW_HEIGHT = 24;
@@ -26,23 +25,23 @@ function weekdayColor(weekday: number, palette: Palette, fallback: string): stri
 
 /** Renders one month page, including the selection highlight, as an SVG document. */
 export function renderCalendarSvg(options: CalendarImageOptions): string {
-  const { selected, today, weekStartsOn, showWeekNumbers } = options;
+  const { selected, today, weekStartsOn, weekNumbering, language } = options;
   const palette = options.dark ? DARK : LIGHT;
   const days = buildMonthPage(selected, weekStartsOn);
 
-  const gridLeft = showWeekNumbers ? WEEK_COLUMN_WIDTH : 0;
+  const gridLeft = weekNumbering ? WEEK_COLUMN_WIDTH : 0;
   const cellWidth = (IMAGE_WIDTH - gridLeft) / 7;
   const gridTop = TITLE_HEIGHT + WEEKDAY_ROW_HEIGHT;
   const headerY = TITLE_HEIGHT + WEEKDAY_ROW_HEIGHT / 2;
 
-  const parts: string[] = [title(format(selected, options.monthTitleFormat), palette)];
+  const parts: string[] = [title(format(selected, language.monthTitleFormat, { locale: language.locale }), palette)];
 
-  if (showWeekNumbers) {
+  if (weekNumbering) {
     parts.push(
       text(
         WEEK_COLUMN_WIDTH / 2,
         headerY,
-        options.weekLabel,
+        language.weekLabel,
         `font-size="13" font-weight="600" fill="${palette.label}" text-anchor="middle"`,
       ),
     );
@@ -53,7 +52,7 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
       text(
         gridLeft + column * cellWidth + cellWidth / 2,
         headerY,
-        options.weekdayLabels[weekday],
+        language.weekdayLabels[weekday],
         `font-size="13" font-weight="600" fill="${weekdayColor(weekday, palette, palette.label)}" text-anchor="middle"`,
       ),
     );
@@ -63,12 +62,12 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
     const y = gridTop + row * ROW_HEIGHT;
     const cy = y + ROW_HEIGHT / 2;
 
-    if (showWeekNumbers) {
+    if (weekNumbering) {
       parts.push(
         text(
           WEEK_COLUMN_WIDTH / 2,
           cy,
-          weekNumber(days[row * 7], weekStartsOn),
+          weekNumber(days[row * 7], weekNumbering),
           `font-size="14" fill="${palette.label}" text-anchor="middle"`,
         ),
       );

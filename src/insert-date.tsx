@@ -1,43 +1,36 @@
-import { Action, ActionPanel, Detail, environment, getPreferenceValues, Icon, useNavigation } from "@raycast/api";
-import { addDays, format } from "date-fns";
+import { Action, ActionPanel, Detail, environment, Icon, Keyboard, useNavigation } from "@raycast/api";
+import { addDays } from "date-fns";
 import { useMemo, useState } from "react";
 import { arrowActions } from "./components/arrow-actions";
 import { MonthView } from "./components/month-view";
 import { YearView } from "./components/year-view";
-import { moveToMonth, moveToYear, shiftMonth, shiftYear, toDayId, WeekStartsOn } from "./lib/calendar";
+import { moveToMonth, moveToYear, shiftMonth, shiftYear, toDayId } from "./lib/calendar";
 import { renderCalendarSvg } from "./lib/calendar-image";
-import { GO_TO_MONTH, GO_TO_YEAR } from "./lib/shortcuts";
+import { formatDate } from "./lib/date-format";
+import { readSettings } from "./lib/settings";
+import { GO_TO_MONTH, GO_TO_TODAY, GO_TO_YEAR } from "./lib/shortcuts";
 import { useImageCache } from "./lib/use-image-cache";
 
-// Fixed for now; these become preferences in Phase 3.
-const DATE_FORMAT = "yyyy-MM-dd";
-const WEEK_STARTS_ON: WeekStartsOn = 0;
-const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
-const WEEK_LABEL = "週";
-const MONTH_TITLE_FORMAT = "yyyy年M月";
-const YEAR_TITLE_FORMAT = "yyyy年";
-const MONTH_LABEL_FORMAT = "M月";
-
 export default function Command() {
-  const { showWeekNumbers } = getPreferenceValues<Preferences.InsertDate>();
+  const settings = useMemo(readSettings, []);
+  const { formats, language, weekStartsOn, weekNumbering } = settings;
   const today = useMemo(() => new Date(), []);
   const [selected, setSelected] = useState<Date>(today);
+  const [formatIndex, setFormatIndex] = useState(settings.initialFormatIndex);
   const { push, pop } = useNavigation();
 
   const dark = environment.appearance === "dark";
   const imageFor = useImageCache();
   const imageUrl = imageFor(toDayId(selected), () =>
-    renderCalendarSvg({
-      selected,
-      today,
-      weekStartsOn: WEEK_STARTS_ON,
-      showWeekNumbers,
-      dark,
-      weekdayLabels: WEEKDAY_LABELS,
-      weekLabel: WEEK_LABEL,
-      monthTitleFormat: MONTH_TITLE_FORMAT,
-    }),
+    renderCalendarSvg({ selected, today, weekStartsOn, weekNumbering, language, dark }),
   );
+
+  const activeFormat = formats[formatIndex];
+  const result = formatDate(selected, activeFormat.pattern, language.locale);
+  // The output itself shows which format is active; the action panel marks it too.
+  const navigationTitle = result.ok
+    ? result.value
+    : `Invalid Date Format ${activeFormat.number}: ${activeFormat.pattern}`;
 
   /** Opens the month view; `pops` is how many screens to close after a month is chosen. */
   function monthView(initial: Date, pops: number) {
@@ -45,8 +38,7 @@ export default function Command() {
       <MonthView
         initial={initial}
         today={today}
-        yearTitleFormat={YEAR_TITLE_FORMAT}
-        monthLabelFormat={MONTH_LABEL_FORMAT}
+        language={language}
         onPick={(month) => {
           setSelected((current) => moveToMonth(current, month));
           for (let i = 0; i < pops; i++) pop();
@@ -55,16 +47,24 @@ export default function Command() {
     );
   }
 
-  const formatted = format(selected, DATE_FORMAT);
-
   return (
     <Detail
       markdown={`![Calendar](${imageUrl})`}
-      navigationTitle={formatted}
+      navigationTitle={navigationTitle}
       actions={
         <ActionPanel>
-          <Action.Paste title="Paste Date" content={formatted} />
-          <Action.CopyToClipboard title="Copy Date" content={formatted} shortcut={{ modifiers: ["cmd"], key: "c" }} />
+          {result.ok ? (
+            <>
+              <Action.Paste title="Paste Date" content={result.value} />
+              <Action.CopyToClipboard
+                title="Copy Date"
+                content={result.value}
+                shortcut={{ modifiers: ["cmd"], key: "c" }}
+              />
+            </>
+          ) : (
+            <Action.OpenInBrowser title="Open Date Format Reference" url="https://date-fns.org/docs/format" />
+          )}
           <ActionPanel.Section title="Navigate">
             {arrowActions(7, (delta) => setSelected((current) => addDays(current, delta)), [
               "Previous Day",
@@ -95,6 +95,12 @@ export default function Command() {
           </ActionPanel.Section>
           <ActionPanel.Section title="Jump">
             <Action
+              title="Go to Today"
+              icon={Icon.Calendar}
+              shortcut={GO_TO_TODAY}
+              onAction={() => setSelected(today)}
+            />
+            <Action
               title="Go to Month…"
               icon={Icon.Calendar}
               shortcut={GO_TO_MONTH}
@@ -116,6 +122,19 @@ export default function Command() {
               }
             />
           </ActionPanel.Section>
+          {formats.length > 1 && (
+            <ActionPanel.Section title="Format">
+              {formats.map((slot, index) => (
+                <Action
+                  key={slot.number}
+                  title={`Use Date Format ${slot.number} (${slot.pattern})`}
+                  icon={index === formatIndex ? Icon.CheckCircle : Icon.Circle}
+                  shortcut={{ modifiers: [], key: String(slot.number) as Keyboard.KeyEquivalent }}
+                  onAction={() => setFormatIndex(index)}
+                />
+              ))}
+            </ActionPanel.Section>
+          )}
         </ActionPanel>
       }
     />

@@ -1,7 +1,8 @@
-import { Action, ActionPanel, Detail, environment } from "@raycast/api";
+import { Action, ActionPanel, Detail, environment, Icon } from "@raycast/api";
 import { useState } from "react";
 import { decadePage, decadeStart } from "../lib/calendar";
 import { PICKER_COLUMNS, renderPickerSvg } from "../lib/picker-image";
+import { GO_TO_TODAY } from "../lib/shortcuts";
 import { useImageCache } from "../lib/use-image-cache";
 import { arrowActions } from "./arrow-actions";
 
@@ -46,6 +47,14 @@ export function YearView({ initialYear, today, onPick }: Props) {
               `Back ${PICKER_COLUMNS} Years`,
               `Forward ${PICKER_COLUMNS} Years`,
             ])}
+          </ActionPanel.Section>
+          <ActionPanel.Section title="Jump">
+            <Action
+              title="Go to This Year"
+              icon={Icon.Calendar}
+              shortcut={GO_TO_TODAY}
+              onAction={() => setSelected(today.getFullYear())}
+            />
           </ActionPanel.Section>
         </ActionPanel>
       }

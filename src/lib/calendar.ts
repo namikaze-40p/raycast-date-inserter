@@ -30,9 +30,32 @@ export function buildMonthPage(month: Date, weekStartsOn: WeekStartsOn): Date[] 
   return Array.from({ length: WEEKS_PER_PAGE * 7 }, (_, i) => addDays(start, i));
 }
 
-/** Week number shown for a row: ISO 8601 for Monday-start weeks, Jan 1-based for Sunday-start weeks. */
-export function weekNumber(weekStart: Date, weekStartsOn: WeekStartsOn): number {
-  return weekStartsOn === 1 ? getISOWeek(weekStart) : getWeek(weekStart, { weekStartsOn: 0, firstWeekContainsDate: 1 });
+/** How week numbers are counted, matching the options of the Obsidian plugin. */
+export type WeekNumbering = "iso" | "western" | "middle-eastern";
+
+/** "auto" picks the numbering that matches the calendar's first day of the week. */
+export function resolveWeekNumbering(setting: WeekNumbering | "auto", weekStartsOn: WeekStartsOn): WeekNumbering {
+  if (setting !== "auto") return setting;
+  return weekStartsOn === 1 ? "iso" : "western";
+}
+
+/**
+ * Week number shown for the calendar row starting at `rowStart`.
+ *
+ * The row's middle day is used so that the number belongs to the week sharing
+ * most days with the row, even when the numbering starts the week on a
+ * different day than the calendar (e.g. ISO weeks on a Sunday-first calendar).
+ */
+export function weekNumber(rowStart: Date, numbering: WeekNumbering): number {
+  const day = addDays(rowStart, 3);
+  switch (numbering) {
+    case "iso":
+      return getISOWeek(day);
+    case "western":
+      return getWeek(day, { weekStartsOn: 0, firstWeekContainsDate: 1 });
+    case "middle-eastern":
+      return getWeek(day, { weekStartsOn: 6, firstWeekContainsDate: 1 });
+  }
 }
 
 export function toMonthId(date: Date): string {
