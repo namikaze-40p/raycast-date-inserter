@@ -1,7 +1,19 @@
 import { format, getDay, isSameDay, isSameMonth } from "date-fns";
 import { buildMonthPage, weekNumber, WeekNumbering, WeekStartsOn, WEEKS_PER_PAGE } from "./calendar";
 import { LanguageConfig } from "./locales";
-import { DARK, IMAGE_HEIGHT, IMAGE_WIDTH, LIGHT, Palette, svgDocument, text, title, TITLE_HEIGHT } from "./svg";
+import {
+  DARK,
+  group,
+  IMAGE_WIDTH,
+  IMAGE_HEIGHT,
+  LIGHT,
+  Palette,
+  round,
+  svgDocument,
+  text,
+  title,
+  TITLE_HEIGHT,
+} from "./svg";
 
 export interface CalendarImageOptions {
   selected: Date;
@@ -36,67 +48,65 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
 
   const parts: string[] = [title(format(selected, language.monthTitleFormat, { locale: language.locale }), palette)];
 
+  // Header row: weekday names, plus the week-number column label.
+  const header: string[] = [];
   if (weekNumbering) {
-    parts.push(
-      text(
-        WEEK_COLUMN_WIDTH / 2,
-        headerY,
-        language.weekLabel,
-        `font-size="13" font-weight="600" fill="${palette.label}" text-anchor="middle"`,
-      ),
-    );
+    header.push(text(WEEK_COLUMN_WIDTH / 2, headerY, language.weekLabel, `fill="${palette.label}"`));
   }
   days.slice(0, 7).forEach((date, column) => {
     const weekday = getDay(date);
-    parts.push(
+    header.push(
       text(
         gridLeft + column * cellWidth + cellWidth / 2,
         headerY,
         language.weekdayLabels[weekday],
-        `font-size="13" font-weight="600" fill="${weekdayColor(weekday, palette, palette.label)}" text-anchor="middle"`,
+        `fill="${weekdayColor(weekday, palette, palette.label)}"`,
       ),
     );
   });
+  parts.push(group(`font-size="13" font-weight="600"`, header));
 
-  for (let row = 0; row < WEEKS_PER_PAGE; row++) {
-    const y = gridTop + row * ROW_HEIGHT;
-    const cy = y + ROW_HEIGHT / 2;
-
-    if (weekNumbering) {
-      parts.push(
-        text(
-          WEEK_COLUMN_WIDTH / 2,
-          cy,
-          weekNumber(days[row * 7], weekNumbering),
-          `font-size="14" fill="${palette.label}" text-anchor="middle"`,
-        ),
-      );
-    }
-
-    for (let column = 0; column < 7; column++) {
-      const date = days[row * 7 + column];
-      const x = gridLeft + column * cellWidth;
-      const cx = x + cellWidth / 2;
-      const isToday = isSameDay(date, today);
-
-      if (isSameDay(date, selected)) {
-        parts.push(
-          `<rect x="${x + 3}" y="${y + 2}" width="${cellWidth - 6}" height="${ROW_HEIGHT - 4}" rx="8" fill="${palette.selection}"/>`,
-        );
-      }
-      const opacity = isSameMonth(date, selected) ? 1 : 0.3;
-      const ring = isToday
-        ? `<circle cx="${cx}" cy="${cy}" r="${ROW_HEIGHT / 2 - 4}" fill="none" stroke="${palette.todayRing}" stroke-width="2.5"/>`
-        : "";
-      const number = text(
-        cx,
-        cy + 1,
-        date.getDate(),
-        `font-size="19" font-weight="${isToday ? 700 : 500}" fill="${weekdayColor(getDay(date), palette, palette.text)}" text-anchor="middle"`,
-      );
-      parts.push(`<g opacity="${opacity}">${ring}${number}</g>`);
-    }
+  if (weekNumbering) {
+    const weeks = Array.from({ length: WEEKS_PER_PAGE }, (_, row) =>
+      text(
+        WEEK_COLUMN_WIDTH / 2,
+        gridTop + row * ROW_HEIGHT + ROW_HEIGHT / 2,
+        weekNumber(days[row * 7], weekNumbering),
+      ),
+    );
+    parts.push(group(`font-size="14" fill="${palette.label}"`, weeks));
   }
+
+  // Day numbers are bucketed by color and fading so each style is written once.
+  const buckets = new Map<string, string[]>();
+  let todayMark = "";
+  days.forEach((date, index) => {
+    const row = Math.floor(index / 7);
+    const x = gridLeft + (index % 7) * cellWidth;
+    const y = gridTop + row * ROW_HEIGHT;
+    const cx = x + cellWidth / 2;
+    const cy = y + ROW_HEIGHT / 2;
+    const fill = weekdayColor(getDay(date), palette, palette.text);
+    const opacity = isSameMonth(date, selected) ? 1 : 0.3;
+
+    if (isSameDay(date, selected)) {
+      parts.push(
+        `<rect x="${round(x + 3)}" y="${round(y + 2)}" width="${round(cellWidth - 6)}" height="${round(ROW_HEIGHT - 4)}" rx="8" fill="${palette.selection}"/>`,
+      );
+    }
+    if (isSameDay(date, today)) {
+      todayMark =
+        `<g opacity="${opacity}">` +
+        `<circle cx="${round(cx)}" cy="${round(cy)}" r="${round(ROW_HEIGHT / 2 - 4)}" fill="none" stroke="${palette.todayRing}" stroke-width="2.5"/>` +
+        text(cx, cy + 1, date.getDate(), `font-size="19" font-weight="700" fill="${fill}"`) +
+        `</g>`;
+      return;
+    }
+    const key = `fill="${fill}" opacity="${opacity}"`;
+    buckets.set(key, [...(buckets.get(key) ?? []), text(cx, cy + 1, date.getDate())]);
+  });
+  const numbers = [...buckets].map(([attrs, texts]) => group(attrs, texts));
+  parts.push(group(`font-size="19" font-weight="500"`, numbers), todayMark);
 
   return svgDocument(parts);
 }

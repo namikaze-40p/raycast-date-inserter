@@ -1,4 +1,4 @@
-import { DARK, IMAGE_HEIGHT, IMAGE_WIDTH, LIGHT, svgDocument, text, title, TITLE_HEIGHT } from "./svg";
+import { DARK, group, IMAGE_HEIGHT, IMAGE_WIDTH, LIGHT, round, svgDocument, text, title, TITLE_HEIGHT } from "./svg";
 
 /** Month and year pickers lay out twelve cells in a 4 x 3 grid. */
 export const PICKER_COLUMNS = 4;
@@ -19,6 +19,7 @@ export function renderPickerSvg(heading: string, cells: PickerCell[], dark: bool
   const cellHeight = (IMAGE_HEIGHT - TITLE_HEIGHT) / PICKER_ROWS;
   const parts = [title(heading, palette)];
 
+  const labels: string[] = [];
   cells.forEach((cell, index) => {
     const x = (index % PICKER_COLUMNS) * cellWidth;
     const y = TITLE_HEIGHT + Math.floor(index / PICKER_COLUMNS) * cellHeight;
@@ -27,20 +28,16 @@ export function renderPickerSvg(heading: string, cells: PickerCell[], dark: bool
 
     if (cell.isSelected) {
       parts.push(
-        `<rect x="${x + 6}" y="${y + 6}" width="${cellWidth - 12}" height="${cellHeight - 12}" rx="10" fill="${palette.selection}"/>`,
+        `<rect x="${round(x + 6)}" y="${round(y + 6)}" width="${round(cellWidth - 12)}" height="${round(cellHeight - 12)}" rx="10" fill="${palette.selection}"/>`,
       );
     }
     const ring = cell.isCurrent
-      ? `<rect x="${cx - 52}" y="${cy - 22}" width="104" height="44" rx="22" fill="none" stroke="${palette.todayRing}" stroke-width="2.5"/>`
+      ? `<rect x="${round(cx - 52)}" y="${round(cy - 22)}" width="104" height="44" rx="22" fill="none" stroke="${palette.todayRing}" stroke-width="2.5"/>`
       : "";
-    const label = text(
-      cx,
-      cy + 1,
-      cell.label,
-      `font-size="22" font-weight="${cell.isCurrent ? 700 : 500}" fill="${palette.text}" text-anchor="middle"`,
-    );
-    parts.push(`<g opacity="${cell.isOutside ? 0.3 : 1}">${ring}${label}</g>`);
+    const label = ring + text(cx, cy + 1, cell.label, cell.isCurrent ? `font-weight="700"` : "");
+    labels.push(cell.isOutside ? `<g opacity="0.3">${label}</g>` : label);
   });
+  parts.push(group(`font-size="22" font-weight="500" fill="${palette.text}"`, labels));
 
   return svgDocument(parts);
 }

@@ -1,10 +1,16 @@
 import { Action, ActionPanel, Detail, environment, Icon } from "@raycast/api";
-import { useState } from "react";
 import { decadePage, decadeStart } from "../lib/calendar";
 import { PICKER_COLUMNS, renderPickerSvg } from "../lib/picker-image";
 import { GO_TO_TODAY } from "../lib/shortcuts";
 import { useImageCache } from "../lib/use-image-cache";
-import { arrowActions } from "./arrow-actions";
+import { useThrottledState } from "../lib/use-throttled-state";
+import { arrowActions, rowHold } from "./arrow-actions";
+
+/** Row of a year on its decade page, which starts one year before the decade. */
+function yearRow(year: number): string {
+  const first = decadeStart(year) - 1;
+  return `${first}-${Math.floor((year - first) / PICKER_COLUMNS)}`;
+}
 
 interface Props {
   initialYear: number;
@@ -15,7 +21,7 @@ interface Props {
 
 /** Decade page of years. Moving past the decade turns the page, like the day calendar. */
 export function YearView({ initialYear, today, onPick }: Props) {
-  const [selected, setSelected] = useState(initialYear);
+  const [selected, updateSelected] = useThrottledState(initialYear);
   const imageFor = useImageCache();
   const dark = environment.appearance === "dark";
 
@@ -45,16 +51,15 @@ export function YearView({ initialYear, today, onPick }: Props) {
               title="Go to This Year"
               icon={Icon.Calendar}
               shortcut={GO_TO_TODAY}
-              onAction={() => setSelected(today.getFullYear())}
+              onAction={() => updateSelected(() => today.getFullYear())}
             />
           </ActionPanel.Section>
           <ActionPanel.Section title="Navigate">
-            {arrowActions(PICKER_COLUMNS, (delta) => setSelected((year) => year + delta), [
-              "Previous Year",
-              "Next Year",
-              `Back ${PICKER_COLUMNS} Years`,
-              `Forward ${PICKER_COLUMNS} Years`,
-            ])}
+            {arrowActions(
+              PICKER_COLUMNS,
+              (delta, key) => updateSelected((year) => year + delta, rowHold(key, yearRow)),
+              ["Previous Year", "Next Year", `Back ${PICKER_COLUMNS} Years`, `Forward ${PICKER_COLUMNS} Years`],
+            )}
           </ActionPanel.Section>
         </ActionPanel>
       }

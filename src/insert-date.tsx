@@ -1,5 +1,5 @@
 import { Action, ActionPanel, Detail, environment, Icon, Keyboard, useNavigation } from "@raycast/api";
-import { addDays } from "date-fns";
+import { addDays, isSameMonth, isSameWeek } from "date-fns";
 import { useMemo, useState } from "react";
 import { arrowActions } from "./components/arrow-actions";
 import { MonthView } from "./components/month-view";
@@ -10,12 +10,14 @@ import { formatDate } from "./lib/date-format";
 import { readSettings } from "./lib/settings";
 import { GO_TO_MONTH, GO_TO_TODAY, GO_TO_YEAR } from "./lib/shortcuts";
 import { useImageCache } from "./lib/use-image-cache";
+import { HoldOptions } from "./lib/update-scheduler";
+import { useThrottledState } from "./lib/use-throttled-state";
 
 export default function Command() {
   const settings = useMemo(readSettings, []);
   const { formats, language, weekStartsOn, weekNumbering } = settings;
   const today = useMemo(() => new Date(), []);
-  const [selected, setSelected] = useState<Date>(today);
+  const [selected, updateSelected] = useThrottledState<Date>(today);
   const [formatIndex, setFormatIndex] = useState(settings.initialFormatIndex);
   const { push, pop } = useNavigation();
 
@@ -32,6 +34,19 @@ export default function Command() {
     ? result.value
     : `Invalid Date Format ${activeFormat.number}: ${activeFormat.pattern}`;
 
+  /**
+   * While an arrow key is held, only show the calendar when the selection
+   * reaches a new month (up/down) or a new week (left/right); see UpdateScheduler.
+   */
+  function holdOptions(key: string): HoldOptions<Date> {
+    const vertical = key === "arrowUp" || key === "arrowDown";
+    return {
+      key,
+      isBoundary: (shown, next) =>
+        !isSameMonth(shown, next) || (!vertical && !isSameWeek(shown, next, { weekStartsOn })),
+    };
+  }
+
   /** Opens the month view; `pops` is how many screens to close after a month is chosen. */
   function monthView(initial: Date, pops: number) {
     return (
@@ -40,7 +55,7 @@ export default function Command() {
         today={today}
         language={language}
         onPick={(month) => {
-          setSelected((current) => moveToMonth(current, month));
+          updateSelected((current) => moveToMonth(current, month));
           for (let i = 0; i < pops; i++) pop();
         }}
       />
@@ -83,7 +98,7 @@ export default function Command() {
               title="Go to Today"
               icon={Icon.Calendar}
               shortcut={GO_TO_TODAY}
-              onAction={() => setSelected(today)}
+              onAction={() => updateSelected(() => today)}
             />
             <Action
               title="Go to Month…"
@@ -108,7 +123,7 @@ export default function Command() {
             />
           </ActionPanel.Section>
           <ActionPanel.Section title="Navigate">
-            {arrowActions(7, (delta) => setSelected((current) => addDays(current, delta)), [
+            {arrowActions(7, (delta, key) => updateSelected((current) => addDays(current, delta), holdOptions(key)), [
               "Previous Day",
               "Next Day",
               "Previous Week",
@@ -117,22 +132,22 @@ export default function Command() {
             <Action
               title="Previous Month"
               shortcut={{ modifiers: ["cmd"], key: "[" }}
-              onAction={() => setSelected((current) => shiftMonth(current, -1))}
+              onAction={() => updateSelected((current) => shiftMonth(current, -1))}
             />
             <Action
               title="Next Month"
               shortcut={{ modifiers: ["cmd"], key: "]" }}
-              onAction={() => setSelected((current) => shiftMonth(current, 1))}
+              onAction={() => updateSelected((current) => shiftMonth(current, 1))}
             />
             <Action
               title="Previous Year"
               shortcut={{ modifiers: ["cmd", "shift"], key: "[" }}
-              onAction={() => setSelected((current) => shiftYear(current, -1))}
+              onAction={() => updateSelected((current) => shiftYear(current, -1))}
             />
             <Action
               title="Next Year"
               shortcut={{ modifiers: ["cmd", "shift"], key: "]" }}
-              onAction={() => setSelected((current) => shiftYear(current, 1))}
+              onAction={() => updateSelected((current) => shiftYear(current, 1))}
             />
           </ActionPanel.Section>
         </ActionPanel>
