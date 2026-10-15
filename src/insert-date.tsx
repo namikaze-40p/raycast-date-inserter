@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { arrowActions } from "./components/arrow-actions";
 import { MonthView } from "./components/month-view";
 import { YearView } from "./components/year-view";
-import { moveToMonth, moveToYear, shiftMonth, shiftYear, toDayId } from "./lib/calendar";
+import { clampDate, moveToMonth, moveToYear, shiftMonth, shiftYear, toDayId } from "./lib/calendar";
 import { renderCalendarSvg } from "./lib/calendar-image";
 import { formatDate } from "./lib/date-format";
 import { readSettings } from "./lib/settings";
@@ -17,7 +17,9 @@ export default function Command() {
   const settings = useMemo(readSettings, []);
   const { formats, language, weekStartsOn, weekNumbering } = settings;
   const today = useMemo(() => new Date(), []);
-  const [selected, updateSelected] = useThrottledState<Date>(today);
+  const [selected, updateSelectedUnclamped] = useThrottledState<Date>(today);
+  const updateSelected: typeof updateSelectedUnclamped = (next, hold) =>
+    updateSelectedUnclamped((current) => clampDate(next(current)), hold);
   const [formatIndex, setFormatIndex] = useState(settings.initialFormatIndex);
   const { push, pop } = useNavigation();
 

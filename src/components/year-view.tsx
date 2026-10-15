@@ -1,5 +1,5 @@
 import { Action, ActionPanel, Detail, environment, Icon } from "@raycast/api";
-import { decadePage, decadeStart } from "../lib/calendar";
+import { clampYear, decadePage, decadeStart, MAX_YEAR, MIN_YEAR } from "../lib/calendar";
 import { PICKER_COLUMNS, renderPickerSvg } from "../lib/picker-image";
 import { GO_TO_TODAY } from "../lib/shortcuts";
 import { useImageCache } from "../lib/use-image-cache";
@@ -21,7 +21,9 @@ interface Props {
 
 /** Decade page of years. Moving past the decade turns the page, like the day calendar. */
 export function YearView({ initialYear, today, onPick }: Props) {
-  const [selected, updateSelected] = useThrottledState(initialYear);
+  const [selected, updateSelectedUnclamped] = useThrottledState(initialYear);
+  const updateSelected: typeof updateSelectedUnclamped = (next, hold) =>
+    updateSelectedUnclamped((current) => clampYear(next(current)), hold);
   const imageFor = useImageCache();
   const dark = environment.appearance === "dark";
 
@@ -33,7 +35,8 @@ export function YearView({ initialYear, today, onPick }: Props) {
         label: String(year),
         isSelected: year === selected,
         isCurrent: year === today.getFullYear(),
-        isOutside: decadeStart(year) !== start,
+        // Years outside the supported range are shown faded and cannot be selected.
+        isOutside: decadeStart(year) !== start || year < MIN_YEAR || year > MAX_YEAR,
       })),
       dark,
     ),

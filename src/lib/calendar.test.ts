@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMonthPage,
+  clampDate,
+  clampYear,
   decadePage,
   decadeStart,
   monthsOfYear,
@@ -137,5 +139,21 @@ describe("week numbers", () => {
     expect(resolveWeekNumbering("auto", 0)).toBe("western");
     expect(resolveWeekNumbering("auto", 1)).toBe("iso");
     expect(resolveWeekNumbering("middle-eastern", 1)).toBe("middle-eastern");
+  });
+});
+
+describe("supported range", () => {
+  it("keeps years within four digits", () => {
+    expect(clampYear(2026)).toBe(2026);
+    expect(clampYear(999)).toBe(1000);
+    expect(clampYear(-1)).toBe(1000);
+    expect(clampYear(10000)).toBe(9999);
+  });
+
+  it("keeps dates between 1000-01-01 and 9999-12-31", () => {
+    expect(toDayId(clampDate(day(2026, 10, 15)))).toBe("2026-10-15");
+    expect(toDayId(clampDate(shiftYear(day(1000, 3, 15), -1)))).toBe("1000-01-01");
+    expect(toDayId(clampDate(shiftMonth(day(9999, 12, 15), 1)))).toBe("9999-12-31");
+    expect(toDayId(clampDate(day(1000, 1, 1)))).toBe("1000-01-01");
   });
 });

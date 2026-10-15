@@ -1,6 +1,6 @@
 import { Action, ActionPanel, Detail, environment, Icon, useNavigation } from "@raycast/api";
 import { addMonths, format, getYear, isSameMonth, startOfMonth } from "date-fns";
-import { monthsOfYear, toMonthId } from "../lib/calendar";
+import { clampDate, monthsOfYear, toMonthId } from "../lib/calendar";
 import { PICKER_COLUMNS, renderPickerSvg } from "../lib/picker-image";
 import { LanguageConfig } from "../lib/locales";
 import { GO_TO_TODAY, GO_TO_YEAR } from "../lib/shortcuts";
@@ -25,7 +25,9 @@ interface Props {
 /** Twelve months of one year. Moving past December or January turns the page to the next or previous year. */
 export function MonthView({ initial, today, language, onPick }: Props) {
   const { push, pop } = useNavigation();
-  const [selected, updateSelected] = useThrottledState(startOfMonth(initial));
+  const [selected, updateSelectedUnclamped] = useThrottledState(startOfMonth(initial));
+  const updateSelected: typeof updateSelectedUnclamped = (next, hold) =>
+    updateSelectedUnclamped((current) => startOfMonth(clampDate(next(current))), hold);
   const imageFor = useImageCache();
   const dark = environment.appearance === "dark";
 

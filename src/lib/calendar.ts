@@ -97,3 +97,22 @@ export function decadePage(year: number): number[] {
   const first = decadeStart(year) - 1;
   return Array.from({ length: 12 }, (_, i) => first + i);
 }
+
+/**
+ * Supported range. Years below 1000 break `yyyy` output (and JavaScript maps
+ * years 0-99 to 1900-1999), so selection stays within four-digit years.
+ */
+export const MIN_YEAR = 1000;
+export const MAX_YEAR = 9999;
+
+export function clampYear(year: number): number {
+  return Math.min(Math.max(year, MIN_YEAR), MAX_YEAR);
+}
+
+export function clampDate(date: Date): Date {
+  const min = new Date(MIN_YEAR, 0, 1);
+  const max = new Date(MAX_YEAR, 11, 31);
+  if (date < min) return min;
+  if (date > max) return max;
+  return date;
+}
