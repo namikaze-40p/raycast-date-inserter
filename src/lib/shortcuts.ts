@@ -1,9 +1,15 @@
 import { Keyboard } from "@raycast/api";
 
-export const GO_TO_MONTH: Keyboard.Shortcut = { modifiers: ["cmd"], key: "m" };
+// Shortcuts are collected here so they can be reviewed together.
+// Bare arrow keys and the 1 / 2 format keys are defined where they are used.
 
-// Cmd+Y stands for "year" here; it only shares its key with the common Quick Look shortcut.
+export const COPY_DATE: Keyboard.Shortcut = { modifiers: ["cmd"], key: "c" };
 
-export const GO_TO_YEAR: Keyboard.Shortcut = { modifiers: ["cmd"], key: "y" };
+export const PREVIOUS_MONTH: Keyboard.Shortcut = { modifiers: ["cmd"], key: "[" };
+export const NEXT_MONTH: Keyboard.Shortcut = { modifiers: ["cmd"], key: "]" };
+export const PREVIOUS_YEAR: Keyboard.Shortcut = { modifiers: ["cmd", "shift"], key: "[" };
+export const NEXT_YEAR: Keyboard.Shortcut = { modifiers: ["cmd", "shift"], key: "]" };
 
 export const GO_TO_TODAY: Keyboard.Shortcut = { modifiers: ["cmd"], key: "t" };
+export const GO_TO_MONTH: Keyboard.Shortcut = { modifiers: ["cmd"], key: "m" };
+export const GO_TO_YEAR: Keyboard.Shortcut = { modifiers: ["cmd"], key: "y" };

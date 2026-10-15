@@ -41,8 +41,6 @@ export function parseSettings(preferences: Preferences.InsertDate): Settings {
     language: languageConfig(preferences.language),
     weekStartsOn,
     weekNumbering:
-      preferences.weekNumbers === "off"
-        ? undefined
-        : resolveWeekNumbering(preferences.weekNumbers as WeekNumbering | "auto", weekStartsOn),
+      preferences.weekNumbers === "off" ? undefined : resolveWeekNumbering(preferences.weekNumbers, weekStartsOn),
   };
 }

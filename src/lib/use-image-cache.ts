@@ -1,19 +1,16 @@
-import { useMemo } from "react";
-import { toDataUri } from "./svg";
+import { environment } from "@raycast/api";
+import { useState } from "react";
+import { ImageCache } from "./image-cache";
 
 /**
- * Returns a function that turns rendered SVGs into data URIs, memoized by key.
- * Raycast shows an image without flicker once it has loaded that exact URI,
- * so the same string must be reused whenever the same state comes back.
+ * Returns a function that renders an image for the current appearance and
+ * returns its data URI, reusing earlier results. The appearance is part of the
+ * key so switching between light and dark mode never shows a stale image.
  */
-export function useImageCache(): (key: string, render: () => string) => string {
-  const cache = useMemo(() => new Map<string, string>(), []);
+export function useImageCache(): (key: string, render: (dark: boolean) => string) => string {
+  const [cache] = useState(() => new ImageCache());
   return (key, render) => {
-    let uri = cache.get(key);
-    if (!uri) {
-      uri = toDataUri(render());
-      cache.set(key, uri);
-    }
-    return uri;
+    const dark = environment.appearance === "dark";
+    return cache.get(`${dark ? "dark" : "light"}:${key}`, () => render(dark));
   };
 }

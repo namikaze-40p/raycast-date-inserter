@@ -7,6 +7,7 @@ import {
   decadeStart,
   monthsOfYear,
   moveToMonth,
+  monthRowId,
   moveToYear,
   resolveWeekNumbering,
   shiftMonth,
@@ -16,6 +17,8 @@ import {
   weekNumber,
   WeekNumbering,
   WeekStartsOn,
+  weekRowId,
+  yearRowId,
 } from "./calendar";
 
 const day = (year: number, month: number, date: number) => new Date(year, month - 1, date);
@@ -155,5 +158,29 @@ describe("supported range", () => {
     expect(toDayId(clampDate(shiftYear(day(1000, 3, 15), -1)))).toBe("1000-01-01");
     expect(toDayId(clampDate(shiftMonth(day(9999, 12, 15), 1)))).toBe("9999-12-31");
     expect(toDayId(clampDate(day(1000, 1, 1)))).toBe("1000-01-01");
+  });
+});
+
+describe("row ids", () => {
+  it("groups days by calendar week", () => {
+    expect(weekRowId(day(2026, 10, 11), 0)).toBe(weekRowId(day(2026, 10, 17), 0));
+    expect(weekRowId(day(2026, 10, 17), 0)).not.toBe(weekRowId(day(2026, 10, 18), 0));
+    // With Monday-start weeks, Sunday ends the row instead of starting it.
+    expect(weekRowId(day(2026, 10, 18), 1)).toBe(weekRowId(day(2026, 10, 12), 1));
+  });
+
+  it("groups months by row of four and year", () => {
+    expect(monthRowId(day(2026, 1, 1))).toBe(monthRowId(day(2026, 4, 1)));
+    expect(monthRowId(day(2026, 4, 1))).not.toBe(monthRowId(day(2026, 5, 1)));
+    expect(monthRowId(day(2026, 12, 1))).not.toBe(monthRowId(day(2027, 12, 1)));
+  });
+
+  it("groups years by row on their decade page", () => {
+    // The 2020s page is 2019-2030: rows 2019-2022, 2023-2026, 2027-2030.
+    expect(yearRowId(2020)).toBe(yearRowId(2022));
+    expect(yearRowId(2022)).not.toBe(yearRowId(2023));
+    expect(yearRowId(2029)).toBe(yearRowId(2027));
+    // 2019 belongs to the 2010s page.
+    expect(yearRowId(2019)).not.toBe(yearRowId(2020));
   });
 });

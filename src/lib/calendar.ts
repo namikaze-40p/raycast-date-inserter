@@ -13,8 +13,13 @@ import {
 
 export type WeekStartsOn = 0 | 1;
 
+export const DAYS_PER_WEEK = 7;
+
 /** Every page has the same number of rows so the image never changes size. */
 export const WEEKS_PER_PAGE = 6;
+
+/** Month and year pages lay out twelve cells in a 4 x 3 grid. */
+export const PICKER_COLUMNS = 4;
 
 /** Stable key for a day. */
 export function toDayId(date: Date): string {
@@ -27,7 +32,7 @@ export function toDayId(date: Date): string {
  */
 export function buildMonthPage(month: Date, weekStartsOn: WeekStartsOn): Date[] {
   const start = startOfWeek(startOfMonth(month), { weekStartsOn });
-  return Array.from({ length: WEEKS_PER_PAGE * 7 }, (_, i) => addDays(start, i));
+  return Array.from({ length: WEEKS_PER_PAGE * DAYS_PER_WEEK }, (_, i) => addDays(start, i));
 }
 
 /** How week numbers are counted, matching the options of the Obsidian plugin. */
@@ -115,4 +120,20 @@ export function clampDate(date: Date): Date {
   if (date < min) return min;
   if (date > max) return max;
   return date;
+}
+
+/** Identifies the calendar row (week) a day is drawn in. */
+export function weekRowId(date: Date, weekStartsOn: WeekStartsOn): string {
+  return toDayId(startOfWeek(date, { weekStartsOn }));
+}
+
+/** Identifies the row of a month in the 4 x 3 month page; each year is its own page. */
+export function monthRowId(month: Date): string {
+  return `${month.getFullYear()}-${Math.floor(month.getMonth() / PICKER_COLUMNS)}`;
+}
+
+/** Identifies the row of a year on its decade page, which starts one year before the decade. */
+export function yearRowId(year: number): string {
+  const first = decadeStart(year) - 1;
+  return `${first}-${Math.floor((year - first) / PICKER_COLUMNS)}`;
 }

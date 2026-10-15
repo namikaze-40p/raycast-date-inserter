@@ -1,7 +1,6 @@
+import { PICKER_COLUMNS } from "./calendar";
 import { DARK, group, IMAGE_HEIGHT, IMAGE_WIDTH, LIGHT, round, svgDocument, text, title, TITLE_HEIGHT } from "./svg";
 
-/** Month and year pickers lay out twelve cells in a 4 x 3 grid. */
-export const PICKER_COLUMNS = 4;
 const PICKER_ROWS = 3;
 
 export interface PickerCell {

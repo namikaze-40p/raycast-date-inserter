@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderCalendarSvg } from "./calendar-image";
 import { LANGUAGES } from "./locales";
 import { renderPickerSvg } from "./picker-image";
-import { IMAGE_HEIGHT, IMAGE_WIDTH, toDataUri } from "./svg";
+import { escapeXml, IMAGE_HEIGHT, IMAGE_WIDTH, text, toDataUri } from "./svg";
 
 const textOf = (svg: string) => [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((match) => match[1]);
 
@@ -53,5 +53,12 @@ describe("toDataUri", () => {
   it("encodes SVG as base64", () => {
     const uri = toDataUri("<svg/>");
     expect(uri).toBe(`data:image/svg+xml;base64,${Buffer.from("<svg/>").toString("base64")}`);
+  });
+});
+
+describe("escapeXml", () => {
+  it("escapes markup characters in text", () => {
+    expect(escapeXml(`a & <b> "c" 'd'`)).toBe("a &amp; &lt;b&gt; &quot;c&quot; &apos;d&apos;");
+    expect(text(0, 0, "Q&A")).toContain(">Q&amp;A</text>");
   });
 });

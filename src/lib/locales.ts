@@ -40,7 +40,7 @@ export const LANGUAGES = {
   "zh-TW": { locale: zhTW, weekdayLabels: ["日", "一", "二", "三", "四", "五", "六"], weekLabel: "週", ...CJK_TITLES },
 } satisfies Record<string, LanguageConfig>;
 
-export type LanguageCode = keyof typeof LANGUAGES;
+type LanguageCode = keyof typeof LANGUAGES;
 
 export function languageConfig(code: string): LanguageConfig {
   return LANGUAGES[code as LanguageCode] ?? LANGUAGES.en;

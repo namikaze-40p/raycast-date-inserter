@@ -1,18 +1,11 @@
-import { Action, ActionPanel, Detail, environment, Icon, useNavigation } from "@raycast/api";
-import { addMonths, format, getYear, isSameMonth, startOfMonth } from "date-fns";
-import { clampDate, monthsOfYear, toMonthId } from "../lib/calendar";
-import { PICKER_COLUMNS, renderPickerSvg } from "../lib/picker-image";
+import { Action, Icon, useNavigation } from "@raycast/api";
+import { addMonths, format, isSameMonth, startOfMonth } from "date-fns";
+import { clampDate, monthRowId, monthsOfYear, toMonthId } from "../lib/calendar";
 import { LanguageConfig } from "../lib/locales";
-import { GO_TO_TODAY, GO_TO_YEAR } from "../lib/shortcuts";
-import { useImageCache } from "../lib/use-image-cache";
-import { useThrottledState } from "../lib/use-throttled-state";
-import { arrowActions, rowHold } from "./arrow-actions";
+import { renderPickerSvg } from "../lib/picker-image";
+import { GO_TO_YEAR } from "../lib/shortcuts";
+import { PickerView } from "./picker-view";
 import { YearView } from "./year-view";
-
-/** Row of a month in the 4 x 3 grid, including the year since each year is its own page. */
-function monthRow(month: Date): string {
-  return `${getYear(month)}-${Math.floor(month.getMonth() / PICKER_COLUMNS)}`;
-}
 
 interface Props {
   initial: Date;
@@ -25,66 +18,51 @@ interface Props {
 /** Twelve months of one year. Moving past December or January turns the page to the next or previous year. */
 export function MonthView({ initial, today, language, onPick }: Props) {
   const { push, pop } = useNavigation();
-  const [selected, updateSelectedUnclamped] = useThrottledState(startOfMonth(initial));
-  const updateSelected: typeof updateSelectedUnclamped = (next, hold) =>
-    updateSelectedUnclamped((current) => startOfMonth(clampDate(next(current))), hold);
-  const imageFor = useImageCache();
-  const dark = environment.appearance === "dark";
-
-  const image = imageFor(toMonthId(selected), () =>
-    renderPickerSvg(
-      format(selected, language.yearTitleFormat, { locale: language.locale }),
-      monthsOfYear(selected).map((month) => ({
-        label: format(month, language.monthLabelFormat, { locale: language.locale }),
-        isSelected: isSameMonth(month, selected),
-        isCurrent: isSameMonth(month, today),
-        isOutside: false,
-      })),
-      dark,
-    ),
-  );
+  const options = { locale: language.locale };
 
   return (
-    <Detail
-      markdown={`![Months](${image})`}
-      navigationTitle={format(selected, "yyyy-MM")}
-      actions={
-        <ActionPanel>
-          <Action title="Choose Month" onAction={() => onPick(selected)} />
-          <ActionPanel.Section title="Jump">
-            <Action
-              title="Go to This Month"
-              icon={Icon.Calendar}
-              shortcut={GO_TO_TODAY}
-              onAction={() => updateSelected(() => startOfMonth(today))}
-            />
-            <Action
-              title="Go to Year…"
-              icon={Icon.Calendar}
-              shortcut={GO_TO_YEAR}
-              onAction={() =>
-                push(
-                  <YearView
-                    initialYear={getYear(selected)}
-                    today={today}
-                    onPick={(year) => {
-                      updateSelected((month) => new Date(year, month.getMonth(), 1));
-                      pop();
-                    }}
-                  />,
-                )
-              }
-            />
-          </ActionPanel.Section>
-          <ActionPanel.Section title="Navigate">
-            {arrowActions(
-              PICKER_COLUMNS,
-              (delta, key) => updateSelected((month) => addMonths(month, delta), rowHold(key, monthRow)),
-              ["Previous Month", "Next Month", `Back ${PICKER_COLUMNS} Months`, `Forward ${PICKER_COLUMNS} Months`],
-            )}
-          </ActionPanel.Section>
-        </ActionPanel>
+    <PickerView<Date>
+      initial={startOfMonth(initial)}
+      current={startOfMonth(today)}
+      noun="Month"
+      normalize={(month) => startOfMonth(clampDate(month))}
+      step={addMonths}
+      rowOf={monthRowId}
+      idOf={toMonthId}
+      navigationTitle={(month) => format(month, language.monthTitleFormat, options)}
+      renderImage={(selected, dark) =>
+        renderPickerSvg(
+          format(selected, language.yearTitleFormat, options),
+          monthsOfYear(selected).map((month) => ({
+            label: format(month, language.monthLabelFormat, options),
+            isSelected: isSameMonth(month, selected),
+            isCurrent: isSameMonth(month, today),
+            isOutside: false,
+          })),
+          dark,
+        )
       }
+      onPick={onPick}
+      jumpActions={(selected, select) => (
+        <Action
+          title="Go to Year…"
+          icon={Icon.Calendar}
+          shortcut={GO_TO_YEAR}
+          onAction={() =>
+            push(
+              <YearView
+                initialYear={selected.getFullYear()}
+                today={today}
+                language={language}
+                onPick={(year) => {
+                  select(new Date(year, selected.getMonth(), 1));
+                  pop();
+                }}
+              />,
+            )
+          }
+        />
+      )}
     />
   );
 }

@@ -1,5 +1,5 @@
 import { format, getDay, isSameDay, isSameMonth } from "date-fns";
-import { buildMonthPage, weekNumber, WeekNumbering, WeekStartsOn, WEEKS_PER_PAGE } from "./calendar";
+import { buildMonthPage, DAYS_PER_WEEK, weekNumber, WeekNumbering, WeekStartsOn, WEEKS_PER_PAGE } from "./calendar";
 import { LanguageConfig } from "./locales";
 import {
   DARK,
@@ -42,7 +42,7 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
   const days = buildMonthPage(selected, weekStartsOn);
 
   const gridLeft = weekNumbering ? WEEK_COLUMN_WIDTH : 0;
-  const cellWidth = (IMAGE_WIDTH - gridLeft) / 7;
+  const cellWidth = (IMAGE_WIDTH - gridLeft) / DAYS_PER_WEEK;
   const gridTop = TITLE_HEIGHT + WEEKDAY_ROW_HEIGHT;
   const headerY = TITLE_HEIGHT + WEEKDAY_ROW_HEIGHT / 2;
 
@@ -53,7 +53,7 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
   if (weekNumbering) {
     header.push(text(WEEK_COLUMN_WIDTH / 2, headerY, language.weekLabel, `fill="${palette.label}"`));
   }
-  days.slice(0, 7).forEach((date, column) => {
+  days.slice(0, DAYS_PER_WEEK).forEach((date, column) => {
     const weekday = getDay(date);
     header.push(
       text(
@@ -71,7 +71,7 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
       text(
         WEEK_COLUMN_WIDTH / 2,
         gridTop + row * ROW_HEIGHT + ROW_HEIGHT / 2,
-        weekNumber(days[row * 7], weekNumbering),
+        weekNumber(days[row * DAYS_PER_WEEK], weekNumbering),
       ),
     );
     parts.push(group(`font-size="14" fill="${palette.label}"`, weeks));
@@ -81,8 +81,8 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
   const buckets = new Map<string, string[]>();
   let todayMark = "";
   days.forEach((date, index) => {
-    const row = Math.floor(index / 7);
-    const x = gridLeft + (index % 7) * cellWidth;
+    const row = Math.floor(index / DAYS_PER_WEEK);
+    const x = gridLeft + (index % DAYS_PER_WEEK) * cellWidth;
     const y = gridTop + row * ROW_HEIGHT;
     const cx = x + cellWidth / 2;
     const cy = y + ROW_HEIGHT / 2;

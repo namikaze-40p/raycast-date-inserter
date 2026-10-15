@@ -1,71 +1,44 @@
-import { Action, ActionPanel, Detail, environment, Icon } from "@raycast/api";
-import { clampYear, decadePage, decadeStart, MAX_YEAR, MIN_YEAR } from "../lib/calendar";
-import { PICKER_COLUMNS, renderPickerSvg } from "../lib/picker-image";
-import { GO_TO_TODAY } from "../lib/shortcuts";
-import { useImageCache } from "../lib/use-image-cache";
-import { useThrottledState } from "../lib/use-throttled-state";
-import { arrowActions, rowHold } from "./arrow-actions";
-
-/** Row of a year on its decade page, which starts one year before the decade. */
-function yearRow(year: number): string {
-  const first = decadeStart(year) - 1;
-  return `${first}-${Math.floor((year - first) / PICKER_COLUMNS)}`;
-}
+import { format } from "date-fns";
+import { clampYear, decadePage, decadeStart, MAX_YEAR, MIN_YEAR, yearRowId } from "../lib/calendar";
+import { LanguageConfig } from "../lib/locales";
+import { renderPickerSvg } from "../lib/picker-image";
+import { PickerView } from "./picker-view";
 
 interface Props {
   initialYear: number;
   today: Date;
+  language: LanguageConfig;
   /** Called with the chosen year; the caller decides where to navigate next. */
   onPick: (year: number) => void;
 }
 
 /** Decade page of years. Moving past the decade turns the page, like the day calendar. */
-export function YearView({ initialYear, today, onPick }: Props) {
-  const [selected, updateSelectedUnclamped] = useThrottledState(initialYear);
-  const updateSelected: typeof updateSelectedUnclamped = (next, hold) =>
-    updateSelectedUnclamped((current) => clampYear(next(current)), hold);
-  const imageFor = useImageCache();
-  const dark = environment.appearance === "dark";
-
-  const start = decadeStart(selected);
-  const image = imageFor(String(selected), () =>
-    renderPickerSvg(
-      `${start} – ${start + 9}`,
-      decadePage(selected).map((year) => ({
-        label: String(year),
-        isSelected: year === selected,
-        isCurrent: year === today.getFullYear(),
-        // Years outside the supported range are shown faded and cannot be selected.
-        isOutside: decadeStart(year) !== start || year < MIN_YEAR || year > MAX_YEAR,
-      })),
-      dark,
-    ),
-  );
-
+export function YearView({ initialYear, today, language, onPick }: Props) {
   return (
-    <Detail
-      markdown={`![Years](${image})`}
-      navigationTitle={String(selected)}
-      actions={
-        <ActionPanel>
-          <Action title="Choose Year" onAction={() => onPick(selected)} />
-          <ActionPanel.Section title="Jump">
-            <Action
-              title="Go to This Year"
-              icon={Icon.Calendar}
-              shortcut={GO_TO_TODAY}
-              onAction={() => updateSelected(() => today.getFullYear())}
-            />
-          </ActionPanel.Section>
-          <ActionPanel.Section title="Navigate">
-            {arrowActions(
-              PICKER_COLUMNS,
-              (delta, key) => updateSelected((year) => year + delta, rowHold(key, yearRow)),
-              ["Previous Year", "Next Year", `Back ${PICKER_COLUMNS} Years`, `Forward ${PICKER_COLUMNS} Years`],
-            )}
-          </ActionPanel.Section>
-        </ActionPanel>
-      }
+    <PickerView<number>
+      initial={initialYear}
+      current={today.getFullYear()}
+      noun="Year"
+      normalize={clampYear}
+      step={(year, delta) => year + delta}
+      rowOf={yearRowId}
+      idOf={String}
+      navigationTitle={(year) => format(new Date(year, 0, 1), language.yearTitleFormat, { locale: language.locale })}
+      renderImage={(selected, dark) => {
+        const start = decadeStart(selected);
+        return renderPickerSvg(
+          `${start} – ${start + 9}`,
+          decadePage(selected).map((year) => ({
+            label: String(year),
+            isSelected: year === selected,
+            isCurrent: year === today.getFullYear(),
+            // Years outside the supported range are shown faded and cannot be selected.
+            isOutside: decadeStart(year) !== start || year < MIN_YEAR || year > MAX_YEAR,
+          })),
+          dark,
+        );
+      }}
+      onPick={onPick}
     />
   );
 }

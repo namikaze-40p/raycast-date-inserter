@@ -1,53 +1,46 @@
-import { Action, ActionPanel, Detail, environment, Icon, Keyboard, useNavigation } from "@raycast/api";
-import { addDays, isSameMonth, isSameWeek } from "date-fns";
-import { useMemo, useState } from "react";
-import { arrowActions } from "./components/arrow-actions";
+import { Action, ActionPanel, Detail, Icon, showToast, Toast, useNavigation } from "@raycast/api";
+import { useEffect, useMemo, useState } from "react";
+import { dayNavigationActions } from "./components/day-navigation-actions";
+import { formatActions } from "./components/format-actions";
 import { MonthView } from "./components/month-view";
 import { YearView } from "./components/year-view";
-import { clampDate, moveToMonth, moveToYear, shiftMonth, shiftYear, toDayId } from "./lib/calendar";
+import { clampDate, moveToMonth, moveToYear, toDayId } from "./lib/calendar";
 import { renderCalendarSvg } from "./lib/calendar-image";
 import { formatDate } from "./lib/date-format";
 import { readSettings } from "./lib/settings";
-import { GO_TO_MONTH, GO_TO_TODAY, GO_TO_YEAR } from "./lib/shortcuts";
+import { COPY_DATE, GO_TO_MONTH, GO_TO_TODAY, GO_TO_YEAR } from "./lib/shortcuts";
 import { useImageCache } from "./lib/use-image-cache";
-import { HoldOptions } from "./lib/update-scheduler";
 import { useThrottledState } from "./lib/use-throttled-state";
+
+const FORMAT_REFERENCE_URL = "https://date-fns.org/docs/format";
 
 export default function Command() {
   const settings = useMemo(readSettings, []);
   const { formats, language, weekStartsOn, weekNumbering } = settings;
   const today = useMemo(() => new Date(), []);
-  const [selected, updateSelectedUnclamped] = useThrottledState<Date>(today);
-  const updateSelected: typeof updateSelectedUnclamped = (next, hold) =>
-    updateSelectedUnclamped((current) => clampDate(next(current)), hold);
+  const [selected, updateSelected] = useThrottledState(today, clampDate);
   const [formatIndex, setFormatIndex] = useState(settings.initialFormatIndex);
   const { push, pop } = useNavigation();
 
-  const dark = environment.appearance === "dark";
   const imageFor = useImageCache();
-  const imageUrl = imageFor(toDayId(selected), () =>
+  const image = imageFor(toDayId(selected), (dark) =>
     renderCalendarSvg({ selected, today, weekStartsOn, weekNumbering, language, dark }),
   );
 
   const activeFormat = formats[formatIndex];
   const result = formatDate(selected, activeFormat.pattern, language.locale);
-  // The output itself shows which format is active; the action panel marks it too.
-  const navigationTitle = result.ok
-    ? result.value
-    : `Invalid Date Format ${activeFormat.number}: ${activeFormat.pattern}`;
+  const formatError = result.ok ? undefined : result.error;
 
-  /**
-   * While an arrow key is held, only show the calendar when the selection
-   * reaches a new month (up/down) or a new week (left/right); see UpdateScheduler.
-   */
-  function holdOptions(key: string): HoldOptions<Date> {
-    const vertical = key === "arrowUp" || key === "arrowDown";
-    return {
-      key,
-      isBoundary: (shown, next) =>
-        !isSameMonth(shown, next) || (!vertical && !isSameWeek(shown, next, { weekStartsOn })),
-    };
-  }
+  // Explain an invalid format once, when it becomes active.
+  useEffect(() => {
+    if (formatError) {
+      showToast({
+        style: Toast.Style.Failure,
+        title: `Invalid Date Format ${activeFormat.number}`,
+        message: formatError,
+      });
+    }
+  }, [activeFormat.number, activeFormat.pattern]);
 
   /** Opens the month view; `pops` is how many screens to close after a month is chosen. */
   function monthView(initial: Date, pops: number) {
@@ -66,35 +59,20 @@ export default function Command() {
 
   return (
     <Detail
-      markdown={`![Calendar](${imageUrl})`}
-      navigationTitle={navigationTitle}
+      markdown={`![Calendar](${image})`}
+      // The output itself shows which format is active; the action panel marks it too.
+      navigationTitle={result.ok ? result.value : `Invalid Date Format ${activeFormat.number}: ${activeFormat.pattern}`}
       actions={
         <ActionPanel>
           {result.ok ? (
             <>
               <Action.Paste title="Paste Date" content={result.value} />
-              <Action.CopyToClipboard
-                title="Copy Date"
-                content={result.value}
-                shortcut={{ modifiers: ["cmd"], key: "c" }}
-              />
+              <Action.CopyToClipboard title="Copy Date" content={result.value} shortcut={COPY_DATE} />
             </>
           ) : (
-            <Action.OpenInBrowser title="Open Date Format Reference" url="https://date-fns.org/docs/format" />
+            <Action.OpenInBrowser title="Open Date Format Reference" url={FORMAT_REFERENCE_URL} />
           )}
-          {formats.length > 1 && (
-            <ActionPanel.Section title="Format">
-              {formats.map((slot, index) => (
-                <Action
-                  key={slot.number}
-                  title={`Use Date Format ${slot.number} (${slot.pattern})`}
-                  icon={index === formatIndex ? Icon.CheckCircle : Icon.Circle}
-                  shortcut={{ modifiers: [], key: String(slot.number) as Keyboard.KeyEquivalent }}
-                  onAction={() => setFormatIndex(index)}
-                />
-              ))}
-            </ActionPanel.Section>
-          )}
+          {formatActions(formats, formatIndex, setFormatIndex)}
           <ActionPanel.Section title="Jump">
             <Action
               title="Go to Today"
@@ -117,6 +95,7 @@ export default function Command() {
                   <YearView
                     initialYear={selected.getFullYear()}
                     today={today}
+                    language={language}
                     // Choosing a year continues to that year's months; afterwards close both screens.
                     onPick={(year) => push(monthView(moveToYear(selected, year), 2))}
                   />,
@@ -124,34 +103,7 @@ export default function Command() {
               }
             />
           </ActionPanel.Section>
-          <ActionPanel.Section title="Navigate">
-            {arrowActions(7, (delta, key) => updateSelected((current) => addDays(current, delta), holdOptions(key)), [
-              "Previous Day",
-              "Next Day",
-              "Previous Week",
-              "Next Week",
-            ])}
-            <Action
-              title="Previous Month"
-              shortcut={{ modifiers: ["cmd"], key: "[" }}
-              onAction={() => updateSelected((current) => shiftMonth(current, -1))}
-            />
-            <Action
-              title="Next Month"
-              shortcut={{ modifiers: ["cmd"], key: "]" }}
-              onAction={() => updateSelected((current) => shiftMonth(current, 1))}
-            />
-            <Action
-              title="Previous Year"
-              shortcut={{ modifiers: ["cmd", "shift"], key: "[" }}
-              onAction={() => updateSelected((current) => shiftYear(current, -1))}
-            />
-            <Action
-              title="Next Year"
-              shortcut={{ modifiers: ["cmd", "shift"], key: "]" }}
-              onAction={() => updateSelected((current) => shiftYear(current, 1))}
-            />
-          </ActionPanel.Section>
+          {dayNavigationActions(updateSelected, weekStartsOn)}
         </ActionPanel>
       }
     />
