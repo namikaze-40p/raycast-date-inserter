@@ -22,14 +22,23 @@ export default function Command() {
   const [formatIndex, setFormatIndex] = useState(settings.initialFormatIndex);
   const { push, pop } = useNavigation();
 
-  const imageFor = useImageCache();
-  const image = imageFor(toDayId(selected), (dark) =>
-    renderCalendarSvg({ selected, today, weekStartsOn, weekNumbering, language, dark }),
-  );
-
   const activeFormat = formats[formatIndex];
   const result = formatDate(selected, activeFormat.pattern, language.locale);
   const formatError = result.ok ? undefined : result.error;
+
+  const imageFor = useImageCache();
+  // The image includes the output preview, so it also depends on the active format.
+  const image = imageFor(`${toDayId(selected)}:${formatIndex}`, (dark) =>
+    renderCalendarSvg({
+      selected,
+      today,
+      weekStartsOn,
+      weekNumbering,
+      language,
+      dark,
+      output: result.ok ? { text: result.value, isError: false } : { text: "Invalid date format", isError: true },
+    }),
+  );
 
   // Explain an invalid format once, when it becomes active.
   useEffect(() => {
@@ -60,8 +69,6 @@ export default function Command() {
   return (
     <Detail
       markdown={`![Calendar](${image})`}
-      // The output itself shows which format is active; the action panel marks it too.
-      navigationTitle={result.ok ? result.value : `Invalid Date Format ${activeFormat.number}: ${activeFormat.pattern}`}
       actions={
         <ActionPanel>
           {result.ok ? (
@@ -76,7 +83,7 @@ export default function Command() {
           <ActionPanel.Section title="Jump">
             <Action
               title="Go to Today"
-              icon={Icon.Calendar}
+              icon={Icon.Undo}
               shortcut={GO_TO_TODAY}
               onAction={() => updateSelected(() => today)}
             />
@@ -95,7 +102,6 @@ export default function Command() {
                   <YearView
                     initialYear={selected.getFullYear()}
                     today={today}
-                    language={language}
                     // Choosing a year continues to that year's months; afterwards close both screens.
                     onPick={(year) => push(monthView(moveToYear(selected, year), 2))}
                   />,

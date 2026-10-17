@@ -29,7 +29,6 @@ export function MonthView({ initial, today, language, onPick }: Props) {
       step={addMonths}
       rowOf={monthRowId}
       idOf={toMonthId}
-      navigationTitle={(month) => format(month, language.monthTitleFormat, options)}
       renderImage={(selected, dark) =>
         renderPickerSvg(
           format(selected, language.yearTitleFormat, options),
@@ -53,7 +52,6 @@ export function MonthView({ initial, today, language, onPick }: Props) {
               <YearView
                 initialYear={selected.getFullYear()}
                 today={today}
-                language={language}
                 onPick={(year) => {
                   select(new Date(year, selected.getMonth(), 1));
                   pop();

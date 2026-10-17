@@ -20,7 +20,6 @@ export interface PickerViewProps<T> {
   rowOf: (value: T) => string;
   /** Cache key of the image showing `value` as selected. */
   idOf: (value: T) => string;
-  navigationTitle: (value: T) => string;
   renderImage: (value: T, dark: boolean) => string;
   /** Called with the chosen value; the caller decides where to navigate next. */
   onPick: (value: T) => void;
@@ -39,14 +38,15 @@ export function PickerView<T>(props: PickerViewProps<T>) {
   return (
     <Detail
       markdown={`![${noun}s](${image})`}
-      navigationTitle={props.navigationTitle(selected)}
+      // A fixed title for this nested screen; the image shows where the selection is.
+      navigationTitle={`Go to ${noun}`}
       actions={
         <ActionPanel>
-          <Action title={`Choose ${noun}`} onAction={() => onPick(selected)} />
+          <Action title={`Choose ${noun}`} icon={Icon.Checkmark} onAction={() => onPick(selected)} />
           <ActionPanel.Section title="Jump">
             <Action
               title={`Go to This ${noun}`}
-              icon={Icon.Calendar}
+              icon={Icon.Undo}
               shortcut={GO_TO_TODAY}
               onAction={() => select(current)}
             />

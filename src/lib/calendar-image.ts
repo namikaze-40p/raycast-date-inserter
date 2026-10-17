@@ -3,6 +3,8 @@ import { buildMonthPage, DAYS_PER_WEEK, weekNumber, WeekNumbering, WeekStartsOn,
 import { LanguageConfig } from "./locales";
 import {
   DARK,
+  estimateTextWidth,
+  fitText,
   group,
   IMAGE_WIDTH,
   IMAGE_HEIGHT,
@@ -12,7 +14,9 @@ import {
   svgDocument,
   text,
   title,
+  TITLE_FONT_SIZE,
   TITLE_HEIGHT,
+  TITLE_MARGIN,
 } from "./svg";
 
 export interface CalendarImageOptions {
@@ -23,10 +27,17 @@ export interface CalendarImageOptions {
   weekNumbering?: WeekNumbering;
   language: LanguageConfig;
   dark: boolean;
+  /**
+   * The text that will be inserted, drawn at the right of the title row. Raycast
+   * asks extensions not to update the navigation title of a root command, so
+   * the preview lives in the image instead.
+   */
+  output: { text: string; isError: boolean };
 }
 
 const WEEKDAY_ROW_HEIGHT = 24;
 const WEEK_COLUMN_WIDTH = 48;
+const OUTPUT_FONT_SIZE = 16;
 const ROW_HEIGHT = (IMAGE_HEIGHT - TITLE_HEIGHT - WEEKDAY_ROW_HEIGHT) / WEEKS_PER_PAGE;
 
 function weekdayColor(weekday: number, palette: Palette, fallback: string): string {
@@ -46,7 +57,20 @@ export function renderCalendarSvg(options: CalendarImageOptions): string {
   const gridTop = TITLE_HEIGHT + WEEKDAY_ROW_HEIGHT;
   const headerY = TITLE_HEIGHT + WEEKDAY_ROW_HEIGHT / 2;
 
-  const parts: string[] = [title(format(selected, language.monthTitleFormat, { locale: language.locale }), palette)];
+  const heading = format(selected, language.monthTitleFormat, { locale: language.locale });
+  const parts: string[] = [title(heading, palette)];
+
+  // Output preview, right-aligned and shortened so it never runs into the title.
+  const available = IMAGE_WIDTH - TITLE_MARGIN * 3 - estimateTextWidth(heading, TITLE_FONT_SIZE);
+  parts.push(
+    text(
+      IMAGE_WIDTH - TITLE_MARGIN,
+      TITLE_HEIGHT / 2,
+      fitText(options.output.text, OUTPUT_FONT_SIZE, available),
+      `text-anchor="end" font-size="${OUTPUT_FONT_SIZE}" font-weight="600" ` +
+        `fill="${options.output.isError ? palette.error : palette.label}"`,
+    ),
+  );
 
   // Header row: weekday names, plus the week-number column label.
   const header: string[] = [];

@@ -1,4 +1,4 @@
-import { Action } from "@raycast/api";
+import { Action, Icon } from "@raycast/api";
 import { ArrowKey } from "../lib/grid-hold";
 
 export interface ArrowTitles {
@@ -8,11 +8,11 @@ export interface ArrowTitles {
   down: string;
 }
 
-const ARROWS: { name: keyof ArrowTitles; key: ArrowKey; step: (columns: number) => number }[] = [
-  { name: "left", key: "arrowLeft", step: () => -1 },
-  { name: "right", key: "arrowRight", step: () => 1 },
-  { name: "up", key: "arrowUp", step: (columns) => -columns },
-  { name: "down", key: "arrowDown", step: (columns) => columns },
+const ARROWS: { name: keyof ArrowTitles; key: ArrowKey; icon: Icon; step: (columns: number) => number }[] = [
+  { name: "left", key: "arrowLeft", icon: Icon.ArrowLeft, step: () => -1 },
+  { name: "right", key: "arrowRight", icon: Icon.ArrowRight, step: () => 1 },
+  { name: "up", key: "arrowUp", icon: Icon.ArrowUp, step: (columns) => -columns },
+  { name: "down", key: "arrowDown", icon: Icon.ArrowDown, step: (columns) => columns },
 ];
 
 /**
@@ -25,6 +25,7 @@ export function arrowActions(columns: number, titles: ArrowTitles, move: (delta:
     <Action
       key={arrow.key}
       title={titles[arrow.name]}
+      icon={arrow.icon}
       shortcut={{ modifiers: [], key: arrow.key }}
       onAction={() => move(arrow.step(columns), arrow.key)}
     />

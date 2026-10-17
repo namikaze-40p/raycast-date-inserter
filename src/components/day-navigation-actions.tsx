@@ -1,4 +1,4 @@
-import { Action, ActionPanel } from "@raycast/api";
+import { Action, ActionPanel, Icon } from "@raycast/api";
 import { addDays } from "date-fns";
 import { DAYS_PER_WEEK, shiftMonth, shiftYear, toMonthId, weekRowId, WeekStartsOn } from "../lib/calendar";
 import { gridHold } from "../lib/grid-hold";
@@ -24,16 +24,28 @@ export function dayNavigationActions(update: Update, weekStartsOn: WeekStartsOn)
       )}
       <Action
         title="Previous Month"
+        icon={Icon.ChevronLeft}
         shortcut={PREVIOUS_MONTH}
         onAction={() => update((current) => shiftMonth(current, -1))}
       />
-      <Action title="Next Month" shortcut={NEXT_MONTH} onAction={() => update((current) => shiftMonth(current, 1))} />
+      <Action
+        title="Next Month"
+        icon={Icon.ChevronRight}
+        shortcut={NEXT_MONTH}
+        onAction={() => update((current) => shiftMonth(current, 1))}
+      />
       <Action
         title="Previous Year"
+        icon={Icon.Rewind}
         shortcut={PREVIOUS_YEAR}
         onAction={() => update((current) => shiftYear(current, -1))}
       />
-      <Action title="Next Year" shortcut={NEXT_YEAR} onAction={() => update((current) => shiftYear(current, 1))} />
+      <Action
+        title="Next Year"
+        icon={Icon.Forward}
+        shortcut={NEXT_YEAR}
+        onAction={() => update((current) => shiftYear(current, 1))}
+      />
     </ActionPanel.Section>
   );
 }

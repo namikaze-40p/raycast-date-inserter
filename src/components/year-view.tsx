@@ -1,19 +1,16 @@
-import { format } from "date-fns";
 import { clampYear, decadePage, decadeStart, MAX_YEAR, MIN_YEAR, yearRowId } from "../lib/calendar";
-import { LanguageConfig } from "../lib/locales";
 import { renderPickerSvg } from "../lib/picker-image";
 import { PickerView } from "./picker-view";
 
 interface Props {
   initialYear: number;
   today: Date;
-  language: LanguageConfig;
   /** Called with the chosen year; the caller decides where to navigate next. */
   onPick: (year: number) => void;
 }
 
 /** Decade page of years. Moving past the decade turns the page, like the day calendar. */
-export function YearView({ initialYear, today, language, onPick }: Props) {
+export function YearView({ initialYear, today, onPick }: Props) {
   return (
     <PickerView<number>
       initial={initialYear}
@@ -23,7 +20,6 @@ export function YearView({ initialYear, today, language, onPick }: Props) {
       step={(year, delta) => year + delta}
       rowOf={yearRowId}
       idOf={String}
-      navigationTitle={(year) => format(new Date(year, 0, 1), language.yearTitleFormat, { locale: language.locale })}
       renderImage={(selected, dark) => {
         const start = decadeStart(selected);
         return renderPickerSvg(

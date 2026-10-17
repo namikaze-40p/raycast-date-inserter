@@ -5,6 +5,7 @@ export interface Palette {
   sunday: string;
   todayRing: string;
   selection: string;
+  error: string;
 }
 
 export const LIGHT: Palette = {
@@ -14,6 +15,7 @@ export const LIGHT: Palette = {
   sunday: "#D93636",
   todayRing: "#E5484D",
   selection: "#E3E3E8",
+  error: "#D93636",
 };
 
 export const DARK: Palette = {
@@ -23,12 +25,15 @@ export const DARK: Palette = {
   sunday: "#FF6B6B",
   todayRing: "#FF6369",
   selection: "#3A3A3C",
+  error: "#FF6B6B",
 };
 
 // The Detail view scrolls when the image is taller than this at full width.
 export const IMAGE_WIDTH = 700;
 export const IMAGE_HEIGHT = 300;
 export const TITLE_HEIGHT = 36;
+export const TITLE_FONT_SIZE = 20;
+export const TITLE_MARGIN = 8;
 
 const FONT = "-apple-system, Helvetica, Arial, sans-serif";
 
@@ -59,11 +64,34 @@ export function group(attrs: string, children: string[]): string {
 
 export function title(content: string, palette: Palette): string {
   return text(
-    8,
+    TITLE_MARGIN,
     TITLE_HEIGHT / 2,
     content,
-    `text-anchor="start" font-size="20" font-weight="700" fill="${palette.text}"`,
+    `text-anchor="start" font-size="${TITLE_FONT_SIZE}" font-weight="700" fill="${palette.text}"`,
   );
+}
+
+/**
+ * Rough width of `value` in pixels at `fontSize`. SVG cannot measure text, so
+ * wide (CJK) characters count as one em and everything else as 0.6 em, which
+ * errs on the wide side for typical Latin text.
+ */
+export function estimateTextWidth(value: string, fontSize: number): number {
+  let ems = 0;
+  for (const char of value) {
+    ems += (char.codePointAt(0) ?? 0) >= 0x2e80 ? 1 : 0.6;
+  }
+  return ems * fontSize;
+}
+
+/** Shortens `value` with an ellipsis so that its estimated width fits `maxWidth`. */
+export function fitText(value: string, fontSize: number, maxWidth: number): string {
+  if (estimateTextWidth(value, fontSize) <= maxWidth) return value;
+  const chars = [...value];
+  while (chars.length > 0 && estimateTextWidth(`${chars.join("")}…`, fontSize) > maxWidth) {
+    chars.pop();
+  }
+  return `${chars.join("")}…`;
 }
 
 /** Root element; text is centered horizontally unless an element says otherwise. */
