@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { formatDate } from "./date-format";
-import { LANGUAGES } from "./locales";
+import { formatDate } from "../extension/src/lib/date-format";
+import { LANGUAGES } from "../extension/src/lib/locales";
 
 const date = new Date(2026, 9, 15);
 

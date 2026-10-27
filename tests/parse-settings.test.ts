@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { LANGUAGES } from "./locales";
-import { parseSettings } from "./parse-settings";
+import { LANGUAGES } from "../extension/src/lib/locales";
+import { parseSettings } from "../extension/src/lib/parse-settings";
 
 const defaults: Preferences.InsertDate = {
   format1: "yyyy-MM-dd",

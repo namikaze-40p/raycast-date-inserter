@@ -20,7 +20,7 @@ import {
   weekRowId,
   withTimeOf,
   yearRowId,
-} from "./calendar";
+} from "../extension/src/lib/calendar";
 
 const day = (year: number, month: number, date: number) => new Date(year, month - 1, date);
 const ids = (dates: Date[]) => dates.map(toDayId);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gridHold } from "./grid-hold";
+import { gridHold } from "../extension/src/lib/grid-hold";
 
 const rowOf = (value: number) => String(Math.floor(value / 4));
 const pageOf = (value: number) => String(Math.floor(value / 12));

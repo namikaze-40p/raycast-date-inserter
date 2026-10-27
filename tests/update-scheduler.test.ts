@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { HOLD_GAP_MS, HoldOptions, UPDATE_INTERVAL_MS, UpdateScheduler } from "./update-scheduler";
+import { HOLD_GAP_MS, HoldOptions, UPDATE_INTERVAL_MS, UpdateScheduler } from "../extension/src/lib/update-scheduler";
 
 const KEY_REPEAT_MS = 30;
 

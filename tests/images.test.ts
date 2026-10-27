@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { renderCalendarSvg } from "./calendar-image";
-import { LANGUAGES } from "./locales";
-import { renderPickerSvg } from "./picker-image";
-import { escapeXml, estimateTextWidth, fitText, IMAGE_HEIGHT, IMAGE_WIDTH, text, toDataUri } from "./svg";
+import { renderCalendarSvg } from "../extension/src/lib/calendar-image";
+import { LANGUAGES } from "../extension/src/lib/locales";
+import { renderPickerSvg } from "../extension/src/lib/picker-image";
+import {
+  escapeXml,
+  estimateTextWidth,
+  fitText,
+  IMAGE_HEIGHT,
+  IMAGE_WIDTH,
+  text,
+  toDataUri,
+} from "../extension/src/lib/svg";
 
 const textOf = (svg: string) => [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((match) => match[1]);
 

@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { describe, expect, it } from "vitest";
-import { languageConfig, LANGUAGES } from "./locales";
+import { languageConfig, LANGUAGES } from "../extension/src/lib/locales";
 
 describe("LANGUAGES", () => {
   it("defines seven weekday labels and valid title formats for every language", () => {

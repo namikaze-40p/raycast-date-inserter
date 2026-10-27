@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ImageCache } from "./image-cache";
+import { ImageCache } from "../extension/src/lib/image-cache";
 
 describe("ImageCache", () => {
   it("renders once per key and returns the same URI", () => {
