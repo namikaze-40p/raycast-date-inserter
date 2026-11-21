@@ -1,5 +1,10 @@
 # Date Inserter Changelog
 
+## [Windows Support] - {PR_MERGE_DATE}
+
+- Added Windows support. Shortcuts that use ⌘ on macOS use Ctrl on Windows.
+- The selected date now has a border, so it stays visible whatever is behind the Raycast window.
+
 ## [Initial Version] - {PR_MERGE_DATE}
 
 - Insert Date command: pick a date from a monthly calendar and paste it into the frontmost app, or copy it.
